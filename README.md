@@ -2,6 +2,8 @@
 
 An autonomous AI coding agent loop with a terminal admin dashboard.
 
+![Ralphy Attraction picture](misc/ralphy-in-action.webp)
+
 Originally based on [snarktank/ralph](https://github.com/snarktank/ralph) — extended with git worktree support, session management, 
 and a Go-based TUI for monitoring.
 
