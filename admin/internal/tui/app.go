@@ -1,4 +1,4 @@
-// Package tui implements the Bubble Tea TUI for ralph-admin.
+// Package tui implements the Bubble Tea TUI for ralphy-admin.
 package tui
 
 import (
@@ -8,8 +8,8 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/ksdaemon/ralph-admin/internal/registry"
-	"github.com/ksdaemon/ralph-admin/internal/session"
+	"github.com/ksdaemon/ralphy-admin/internal/registry"
+	"github.com/ksdaemon/ralphy-admin/internal/session"
 )
 
 // View represents which screen is currently active.

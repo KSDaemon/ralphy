@@ -1,4 +1,4 @@
-// ralph-admin is a TUI dashboard for monitoring running ralph loop sessions.
+// ralphy-admin is a TUI dashboard for monitoring running ralphy loop sessions.
 package main
 
 import (
@@ -7,8 +7,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/ksdaemon/ralph-admin/internal/registry"
-	"github.com/ksdaemon/ralph-admin/internal/tui"
+	"github.com/ksdaemon/ralphy-admin/internal/registry"
+	"github.com/ksdaemon/ralphy-admin/internal/tui"
 )
 
 func main() {
@@ -25,7 +25,7 @@ func main() {
 	p := tea.NewProgram(model, tea.WithAltScreen())
 
 	if _, err := p.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error running ralph-admin: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error running ralphy-admin: %v\n", err)
 		os.Exit(1)
 	}
 }

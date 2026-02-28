@@ -1,15 +1,15 @@
 #!/bin/bash
-# Ralph Wiggum - Long-running AI agent loop
+# Ralphy Wiggum - Long-running AI agent loop
 # Based on original version from https://github.com/snarktank/ralph
 # Modified and adopted by KSDaemon
 
 set -e
 
 # === Session Registry ===
-# Ralph sessions are registered in a file-based registry so that
-# ralph-admin TUI can discover and monitor running sessions.
+# Ralphy sessions are registered in a file-based registry so that
+# ralphy-admin TUI can discover and monitor running sessions.
 
-RALPH_REGISTRY_DIR="${TMPDIR:-/tmp}/ralph-sessions"
+RALPH_REGISTRY_DIR="${TMPDIR:-/tmp}/ralphy-sessions"
 mkdir -p "$RALPH_REGISTRY_DIR"
 
 # Generate unique session ID
@@ -31,7 +31,7 @@ generate_session_id() {
 cleanup_old_sessions() {
   local work_dir="$1"
   # Remove any previous sessions from the same work directory
-  # (only one ralph loop should be active per directory)
+  # (only one ralphy loop should be active per directory)
   for f in "$RALPH_REGISTRY_DIR"/*.json; do
     [ -f "$f" ] || continue
     local old_dir
@@ -118,7 +118,7 @@ update_session_status() {
 }
 
 # Handle Ctrl+C gracefully - mark session as interrupted and exit
-trap 'echo ""; echo "Ralph interrupted by user. Exiting..."; update_session_status "interrupted"; exit 130' INT TERM
+trap 'echo ""; echo "Ralphy interrupted by user. Exiting..."; update_session_status "interrupted"; exit 130' INT TERM
 
 # Parse arguments
 TOOL="opencode"
@@ -128,44 +128,44 @@ COMMAND=""
 
 show_help() {
   cat << EOF
-Ralph Wiggum - Long-running AI agent loop
+Ralphy Wiggum - Long-running AI agent loop
 
-Usage: ralph [OPTIONS] [COMMAND]
+Usage: ralphy [OPTIONS] [COMMAND]
 
 Options:
   --tool TOOL             AI tool to use: opencode, amp, or claude (default: opencode)
   -b, --branch            Work in current repo (create/switch branch) instead of worktree
-                          By default, ralph creates a git worktree in a sibling directory
+                          By default, ralphy creates a git worktree in a sibling directory
   --max-iterations N      Maximum number of iterations (default: 100)
   -h, --help              Show this help message
 
 Commands:
   (none)                      Continue existing task or create new PRD if none exists
   new                         Force create new PRD (removes old PRD/progress files)
-  install                     Symlink ralph skills (prd, ralph) into AI tool config dirs
+  install                     Symlink ralphy skills (prd, ralph) into AI tool config dirs
   cleanup|finish|clean|clear  Clean PRD/progress files and commit in current branch
 
 Examples:
-  ralph                      # Start or continue work (uses worktree by default)
-  ralph new                  # Start fresh with new PRD (worktree)
-                             # If repo is 'myapp' and PRD branch is 'ralph/feature-x'
-                             # Creates worktree at: ../myapp-feature-x/
-  ralph -b new               # Start fresh with new PRD in current repo (branch only)
-  ralph install              # Install skills to OpenCode and Claude config directories
-  ralph cleanup              # Clean up and commit PRD files (finish/clean/clear also work)
-  ralph finish               # Same as cleanup - removes PRD and commits
-  ralph --tool claude        # Use Claude instead of OpenCode
-  ralph --max-iterations 50  # Run with 50 iterations max
+  ralphy                      # Start or continue work (uses worktree by default)
+  ralphy new                  # Start fresh with new PRD (worktree)
+                              # If repo is 'myapp' and PRD branch is 'ralphy/feature-x'
+                              # Creates worktree at: ../myapp-feature-x/
+  ralphy -b new               # Start fresh with new PRD in current repo (branch only)
+  ralphy install              # Install skills to OpenCode and Claude config directories
+  ralphy cleanup              # Clean up and commit PRD files (finish/clean/clear also work)
+  ralphy finish               # Same as cleanup - removes PRD and commits
+  ralphy --tool claude        # Use Claude instead of OpenCode
+  ralphy --max-iterations 50  # Run with 50 iterations max
 
 Worktree Details (default behavior):
-  Ralph creates an isolated git worktree in a sibling directory by default.
+  Ralphy creates an isolated git worktree in a sibling directory by default.
   Use -b/--branch to disable this and work in the current repository instead.
 
   Directory name format: <repository-name>-<feature-name>
   - Repository name: from git root directory name
-  - Feature name: PRD branch name with 'ralph/' prefix stripped
+  - Feature name: PRD branch name with 'ralphy/' prefix stripped
 
-  Example: If you're in /home/user/myapp and PRD specifies branch 'ralph/add-auth',
+  Example: If you're in /home/user/myapp and PRD specifies branch 'ralphy/add-auth',
            worktree will be created at: /home/user/myapp-add-auth/
 EOF
   exit 0
@@ -212,7 +212,7 @@ done
 # Handle 'install' command - symlink skills to supported AI tools
 if [ "$COMMAND" = "install" ]; then
   # Skills source directory (relative to this script)
-  SKILLS_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../ralph/skills" && pwd)"
+  SKILLS_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../ralphy/skills" && pwd)"
 
   if [ ! -d "$SKILLS_SRC/prd" ] || [ ! -d "$SKILLS_SRC/ralph" ]; then
     echo "Error: Skills not found at $SKILLS_SRC"
@@ -309,7 +309,7 @@ mkdir -p "$RALPH_DIR"
 
 # Get script directory for prompt file
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROMPT_FILE="$SCRIPT_DIR/../ralph/prompt.md"
+PROMPT_FILE="$SCRIPT_DIR/../ralphy/prompt.md"
 
 PRD_FILE="$RALPH_DIR/prd.json"
 PROGRESS_FILE="$RALPH_DIR/progress.txt"
@@ -346,11 +346,11 @@ if [ "$COMMAND" = "cleanup" ] || [ "$COMMAND" = "finish" ] || [ "$COMMAND" = "cl
     echo ""
     echo "Committing cleanup..."
     git add .ralph/prd.json .ralph/progress.txt 2>/dev/null || true
-    if ! git commit -m "chore: cleanup ralph PRD and progress files"; then
+    if ! git commit -m "chore: cleanup ralphy PRD and progress files"; then
       echo "Commit failed (possibly due to pre-commit hooks with auto-fixes)."
       echo "Re-staging files and retrying commit..."
       git add .ralph/ 2>/dev/null || true
-      git commit -m "chore: cleanup ralph PRD and progress files" || {
+      git commit -m "chore: cleanup ralphy PRD and progress files" || {
         echo "Error: Commit failed after retry. Please fix issues manually."
         exit 1
       }
@@ -471,8 +471,8 @@ if [ "$PRD_EXISTS" = false ]; then
   if [ "$USE_WORKTREE" = true ] && [ -n "$PRD_BRANCH" ]; then
 
     if [ "$PRD_BRANCH" != "$CURRENT_GIT_BRANCH" ] || [ -z "$CURRENT_GIT_BRANCH" ]; then
-      # Extract feature name without ralph/ prefix for worktree directory naming
-      FEATURE_NAME=$(echo "$PRD_BRANCH" | sed 's|^ralph/||')
+      # Extract feature name without ralphy/ prefix for worktree directory naming
+      FEATURE_NAME=$(echo "$PRD_BRANCH" | sed 's|^ralphy/||')
       WORKTREE_DIR="$ORIGINAL_DIR/../$REPO_NAME-$FEATURE_NAME"
 
       echo "Setting up worktree at: $WORKTREE_DIR"
@@ -561,7 +561,7 @@ fi
 
 # Initialize progress file if it doesn't exist
 if [ ! -f "$PROGRESS_FILE" ]; then
-  echo "# Ralph Progress Log" > "$PROGRESS_FILE"
+  echo "# Ralphy Progress Log" > "$PROGRESS_FILE"
   echo "Started: $(date)" >> "$PROGRESS_FILE"
   echo "---" >> "$PROGRESS_FILE"
 fi
@@ -576,19 +576,19 @@ SESSION_PRD_DESC=$(jq -r '.description // ""' "$PRD_FILE" 2>/dev/null || echo ""
 
 register_session "$SESSION_PROJECT" "$SESSION_BRANCH" "$SESSION_PRD_DESC" "$WORK_DIR" "$WORKTREE_DIR"
 
-echo "Starting Ralph - Tool: $TOOL - Max iterations: $MAX_ITERATIONS"
+echo "Starting Ralphy - Tool: $TOOL - Max iterations: $MAX_ITERATIONS"
 
 for i in $(seq 1 $MAX_ITERATIONS); do
   echo ""
   echo "==============================================================="
-  echo "  Ralph Iteration $i of $MAX_ITERATIONS ($TOOL)"
+  echo "  Ralphy Iteration $i of $MAX_ITERATIONS ($TOOL)"
   echo "==============================================================="
 
   # Update session heartbeat at start of each iteration
   update_heartbeat "$i"
 
 
-  # Run the selected tool with the ralph prompt
+  # Run the selected tool with the ralphy prompt
   # Output goes to: stderr (terminal), session log file, and captured in $OUTPUT
   if [[ "$TOOL" == "amp" ]]; then
     OUTPUT=$(cat "$PROMPT_FILE" | amp --dangerously-allow-all 2>&1 | tee -a "$SESSION_LOG" /dev/stderr) || true
@@ -605,10 +605,10 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   # Check for completion signal
   if echo "$OUTPUT" | grep -q "<promise>COMPLETE</promise>"; then
     echo ""
-    echo "Ralph completed all tasks!"
+    echo "Ralphy completed all tasks!"
     echo "Completed at iteration $i of $MAX_ITERATIONS"
 
-    # Clean up PRD and progress files (same as 'ralph cleanup')
+    # Clean up PRD and progress files (same as 'ralphy cleanup')
     if [ -f "$PRD_FILE" ]; then
       echo ""
       echo "Cleaning up PRD and progress files..."
@@ -617,12 +617,12 @@ for i in $(seq 1 $MAX_ITERATIONS); do
         git add "$PRD_FILE" "$PROGRESS_FILE" 2>/dev/null || true
       }
       git add .ralph/prd.json .ralph/progress.txt 2>/dev/null || true
-      if ! git commit -m "chore: cleanup ralph PRD and progress files"; then
+      if ! git commit -m "chore: cleanup ralphy PRD and progress files"; then
         echo "Commit failed (possibly due to pre-commit hooks with auto-fixes)."
         echo "Re-staging files and retrying commit..."
         git add .ralph/ 2>/dev/null || true
-        git commit -m "chore: cleanup ralph PRD and progress files" || {
-          echo "Warning: Could not commit cleanup. Please run 'ralph cleanup' manually."
+        git commit -m "chore: cleanup ralphy PRD and progress files" || {
+          echo "Warning: Could not commit cleanup. Please run 'ralphy cleanup' manually."
         }
       fi
       echo "Cleanup complete!"
@@ -650,7 +650,7 @@ for i in $(seq 1 $MAX_ITERATIONS); do
 done
 
 echo ""
-echo "Ralph reached max iterations ($MAX_ITERATIONS) without completing all tasks."
+echo "Ralphy reached max iterations ($MAX_ITERATIONS) without completing all tasks."
 echo "Check $PROGRESS_FILE for status."
 
 # Cleanup info for worktree if used

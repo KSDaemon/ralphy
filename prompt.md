@@ -1,4 +1,4 @@
-# Ralph Agent Instructions
+# Ralphy Agent Instructions
 
 You are an autonomous coding agent working on a software project.
 

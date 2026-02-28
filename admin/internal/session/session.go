@@ -1,4 +1,4 @@
-// Package session defines the data types for ralph session registry.
+// Package session defines the data types for ralphy session registry.
 package session
 
 import (
@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-// Session represents a running ralph loop instance.
-// The JSON structure matches what the ralph bash script writes
+// Session represents a running ralphy loop instance.
+// The JSON structure matches what the ralphy bash script writes
 // to the registry directory.
 type Session struct {
 	PID              int       `json:"pid"`
@@ -46,7 +46,7 @@ const (
 )
 
 // IsTerminal returns true if the session status is a final state
-// (the ralph process is no longer running by design).
+// (the ralphy process is no longer running by design).
 func (s *Session) IsTerminal() bool {
 	switch s.Status {
 	case StatusCompleted, StatusMaxIterations, StatusInterrupted:

@@ -8,7 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/ksdaemon/ralph-admin/internal/registry"
+	"github.com/ksdaemon/ralphy-admin/internal/registry"
 )
 
 const (
@@ -67,7 +67,7 @@ func (m Model) viewDetail() string {
 	}
 
 	// === Title (1 line + newline) ===
-	title := titleStyle.Render(fmt.Sprintf("Ralph Admin - %s", sess.Project))
+	title := titleStyle.Render(fmt.Sprintf("Ralphy Admin - %s", sess.Project))
 
 	// === Header: two bordered boxes side by side ===
 	// Each box gets roughly half the width minus gap and borders

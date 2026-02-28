@@ -136,7 +136,7 @@ func (m Model) viewList() string {
 		}
 	}
 
-	title := fmt.Sprintf("Ralph Admin - %d session(s)", len(m.sessions))
+	title := fmt.Sprintf("Ralphy Admin - %d session(s)", len(m.sessions))
 	var parts []string
 	if activeCount > 0 {
 		parts = append(parts, fmt.Sprintf("%d active", activeCount))
@@ -155,9 +155,9 @@ func (m Model) viewList() string {
 
 	if len(m.sessions) == 0 {
 		b.WriteString("\n")
-		b.WriteString(lipgloss.NewStyle().Foreground(colorGray).Render("  No ralph sessions found (recent 24h)."))
+		b.WriteString(lipgloss.NewStyle().Foreground(colorGray).Render("  No ralphy sessions found (recent 24h)."))
 		b.WriteString("\n")
-		b.WriteString(lipgloss.NewStyle().Foreground(colorDim).Render("  Start a ralph loop in any project and it will appear here."))
+		b.WriteString(lipgloss.NewStyle().Foreground(colorDim).Render("  Start a ralphy loop in any project and it will appear here."))
 		b.WriteString("\n")
 	} else {
 		// Table header

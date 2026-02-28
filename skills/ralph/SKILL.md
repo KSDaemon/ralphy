@@ -20,7 +20,7 @@ Take the latest created PRD from ".ralph/tasks/" directory (markdown file or tex
 ```json
 {
   "project": "[Project Name]",
-  "branchName": "ralph/[feature-name-kebab-case]",
+  "branchName": "ralphy/[feature-name-kebab-case]",
   "description": "[Feature description from PRD title/intro]",
   "userStories": [
     {
@@ -44,9 +44,9 @@ Take the latest created PRD from ".ralph/tasks/" directory (markdown file or tex
 
 ## Story Size: The Number One Rule
 
-**Each story must be completable in ONE Ralph iteration (one context window).**
+**Each story must be completable in ONE Ralphy iteration (one context window).**
 
-Ralph spawns a fresh Amp instance per iteration with no memory of previous work. If a story is too big, the LLM runs out of context before finishing and produces broken code.
+Ralphy spawns a fresh AI tool instance per iteration with no memory of previous work. If a story is too big, the LLM runs out of context before finishing and produces broken code.
 
 ### Right-sized stories:
 - Add a database column and migration
@@ -81,7 +81,7 @@ Stories execute in priority order. Earlier stories must not depend on later ones
 
 ## Acceptance Criteria: Must Be Verifiable
 
-Each criterion must be something Ralph can CHECK, not something vague.
+Each criterion must be something Ralphy can CHECK, not something vague.
 
 ### Good criteria (verifiable):
 - "Add `status` column to tasks table with default 'pending'"
@@ -111,7 +111,7 @@ For stories with testable logic, also include:
 "Verify in browser using dev-browser skill"
 ```
 
-Frontend stories are NOT complete until visually verified. Ralph will use the dev-browser skill to navigate to the page, interact with the UI, and confirm changes work.
+Frontend stories are NOT complete until visually verified. Ralphy will use the dev-browser skill to navigate to the page, interact with the UI, and confirm changes work.
 
 ---
 
@@ -121,7 +121,7 @@ Frontend stories are NOT complete until visually verified. Ralph will use the de
 2. **IDs**: Sequential (US-001, US-002, etc.)
 3. **Priority**: Based on dependency order, then document order
 4. **All stories**: `passes: false` and empty `notes`
-5. **branchName**: Derive from feature name, kebab-case, prefixed with `ralph/`
+5. **branchName**: Derive from feature name, kebab-case, prefixed with `ralphy/`
 6. **Always add**: "Typecheck passes" to every story's acceptance criteria
 
 ---
@@ -164,7 +164,7 @@ Add ability to mark tasks with different statuses.
 ```json
 {
   "project": "TaskApp",
-  "branchName": "ralph/task-status",
+  "branchName": "ralphy/task-status",
   "description": "Task Status Feature - Track task progress with status indicators",
   "userStories": [
     {
@@ -240,7 +240,7 @@ Add ability to mark tasks with different statuses.
    - Copy current `prd.json` and `progress.txt` to archive
    - Reset `progress.txt` with fresh header
 
-**The ralph.sh script handles this automatically** when you run it, but if you are manually updating prd.json between runs, archive first.
+**The ralphy script handles this automatically** when you run it, but if you are manually updating prd.json between runs, archive first.
 
 ---
 

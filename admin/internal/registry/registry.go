@@ -1,4 +1,4 @@
-// Package registry handles reading, validating, and managing ralph session files.
+// Package registry handles reading, validating, and managing ralphy session files.
 package registry
 
 import (
@@ -10,19 +10,19 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/ksdaemon/ralph-admin/internal/session"
+	"github.com/ksdaemon/ralphy-admin/internal/session"
 )
 
-// Registry manages ralph session files in the registry directory.
+// Registry manages ralphy session files in the registry directory.
 type Registry struct {
 	Dir string
 }
 
 // New creates a new Registry pointing to the default registry directory.
-// It uses $TMPDIR/ralph-sessions/ (which on macOS is user-scoped).
+// It uses $TMPDIR/ralphy-sessions/ (which on macOS is user-scoped).
 func New() *Registry {
 	tmpDir := os.TempDir()
-	dir := filepath.Join(tmpDir, "ralph-sessions")
+	dir := filepath.Join(tmpDir, "ralphy-sessions")
 	return &Registry{Dir: dir}
 }
 
@@ -142,7 +142,7 @@ func (r *Registry) removeSessionFiles(sess *session.Session) {
 }
 
 // CleanupExpired removes all session files older than SessionTTL.
-// Called at startup of ralph-admin.
+// Called at startup of ralphy-admin.
 func (r *Registry) CleanupExpired() (int, error) {
 	entries, err := os.ReadDir(r.Dir)
 	if err != nil {
@@ -188,8 +188,8 @@ func (r *Registry) GetSession(sessionID string) (*session.Session, error) {
 	return sess, nil
 }
 
-// KillSession sends SIGTERM to the ralph process.
-// Ralph's trap handler will update the session status to "interrupted".
+// KillSession sends SIGTERM to the ralphy process.
+// Ralphy's trap handler will update the session status to "interrupted".
 func (r *Registry) KillSession(sess *session.Session) error {
 	if sess.IsTerminal() {
 		return fmt.Errorf("session is already in terminal state: %s", sess.Status)
@@ -200,7 +200,7 @@ func (r *Registry) KillSession(sess *session.Session) error {
 		return nil
 	}
 
-	// Send SIGTERM — ralph's trap handler will set status to "interrupted"
+	// Send SIGTERM — ralphy's trap handler will set status to "interrupted"
 	err := syscall.Kill(sess.PID, syscall.SIGTERM)
 	if err != nil {
 		return fmt.Errorf("sending SIGTERM to PID %d: %w", sess.PID, err)
@@ -208,14 +208,14 @@ func (r *Registry) KillSession(sess *session.Session) error {
 	return nil
 }
 
-// PauseSession sends SIGSTOP to freeze the ralph process and its children.
+// PauseSession sends SIGSTOP to freeze the ralphy process and its children.
 func (r *Registry) PauseSession(sess *session.Session) error {
 	if !sess.IsAlive {
 		return fmt.Errorf("session PID %d is not alive", sess.PID)
 	}
 
 	// Send SIGSTOP to the process group (negative PID)
-	// This stops the ralph script and its child AI tool process
+	// This stops the ralphy script and its child AI tool process
 	err := syscall.Kill(-sess.PID, syscall.SIGSTOP)
 	if err != nil {
 		// Fallback: try stopping just the process
@@ -230,7 +230,7 @@ func (r *Registry) PauseSession(sess *session.Session) error {
 	return nil
 }
 
-// ResumeSession sends SIGCONT to unfreeze the ralph process.
+// ResumeSession sends SIGCONT to unfreeze the ralphy process.
 func (r *Registry) ResumeSession(sess *session.Session) error {
 	if !sess.IsAlive {
 		return fmt.Errorf("session PID %d is not alive", sess.PID)

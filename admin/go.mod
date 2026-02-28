@@ -1,4 +1,4 @@
-module github.com/ksdaemon/ralph-admin
+module github.com/ksdaemon/ralphy-admin
 
 go 1.25.0
 
