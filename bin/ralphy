@@ -1,5 +1,5 @@
 #!/bin/bash
-# Ralphy Wiggum - Long-running AI agent loop
+# Ralph Wiggum - Long-running AI agent loop
 # Based on original version from https://github.com/snarktank/ralph
 # Modified and adopted by KSDaemon
 
@@ -128,7 +128,7 @@ COMMAND=""
 
 show_help() {
   cat << EOF
-Ralphy Wiggum - Long-running AI agent loop
+Ralph Wiggum - Long-running AI agent loop
 
 Usage: ralphy [OPTIONS] [COMMAND]
 
