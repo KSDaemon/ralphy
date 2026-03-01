@@ -29,6 +29,11 @@ type Session struct {
 	SessionID string `json:"-"` // extracted from filename
 	FilePath  string `json:"-"` // full path to session file
 	IsAlive   bool   `json:"-"` // whether PID is actually running
+
+	// User stories progress (computed from .ralph/prd.json)
+	UserStoriesTotal int  `json:"-"` // total number of user stories
+	UserStoriesDone  int  `json:"-"` // stories with passes: true
+	UserStoriesFound bool `json:"-"` // whether prd.json was found and parsed
 }
 
 // Status constants
@@ -112,6 +117,22 @@ func (s *Session) FormatHeartbeat() string {
 		return "just now"
 	}
 	return formatDuration(d) + " ago"
+}
+
+// UserStoriesProgress returns a string like "5/17" or "-" if no prd.json.
+func (s *Session) UserStoriesProgress() string {
+	if !s.UserStoriesFound {
+		return "-"
+	}
+	return fmt.Sprintf("%d/%d", s.UserStoriesDone, s.UserStoriesTotal)
+}
+
+// UserStoriesPercent returns 0-100 completion percentage.
+func (s *Session) UserStoriesPercent() int {
+	if !s.UserStoriesFound || s.UserStoriesTotal == 0 {
+		return 0
+	}
+	return s.UserStoriesDone * 100 / s.UserStoriesTotal
 }
 
 func formatDuration(d time.Duration) string {

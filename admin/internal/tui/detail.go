@@ -99,6 +99,10 @@ func (m Model) viewDetail() string {
 	var rightRows []string
 	rightRows = append(rightRows, detailRowStr("PID", fmt.Sprintf("%d", sess.PID)))
 	rightRows = append(rightRows, detailRowStr("Iteration", sess.IterationProgress()))
+	if sess.UserStoriesFound {
+		usBar := renderDetailProgressBar(sess.UserStoriesDone, sess.UserStoriesTotal, headerInnerW-22)
+		rightRows = append(rightRows, detailRowStr("User Stories", usBar))
+	}
 	rightRows = append(rightRows, detailRowStr("Started", sess.StartedAt.Local().Format("2006-01-02 15:04:05")))
 	rightRows = append(rightRows, detailRowStr("Uptime", sess.FormatUptime()))
 	rightRows = append(rightRows, detailRowStr("Heartbeat", sess.FormatHeartbeat()))
@@ -250,6 +254,37 @@ func detailRowStr(label, value string) string {
 		detailLabelStyle.Render(label+":"),
 		detailValueStyle.Render(value),
 	)
+}
+
+// renderDetailProgressBar creates a progress bar for the detail view header.
+// Returns something like: ████░░░░ 5/17 (29%)
+func renderDetailProgressBar(done, total, maxWidth int) string {
+	if total == 0 {
+		return "-"
+	}
+
+	pct := done * 100 / total
+	countText := fmt.Sprintf(" %d/%d (%d%%)", done, total, pct)
+	barWidth := maxWidth - len(countText)
+	if barWidth < 3 {
+		return fmt.Sprintf("%d/%d (%d%%)", done, total, pct)
+	}
+	if barWidth > 20 {
+		barWidth = 20
+	}
+
+	filled := done * barWidth / total
+	if filled > barWidth {
+		filled = barWidth
+	}
+	empty := barWidth - filled
+
+	filledStyle := lipgloss.NewStyle().Foreground(colorGreen)
+	emptyStyle := lipgloss.NewStyle().Foreground(colorDim)
+
+	return filledStyle.Render(strings.Repeat("█", filled)) +
+		emptyStyle.Render(strings.Repeat("░", empty)) +
+		countText
 }
 
 func formatDurationShort(d time.Duration) string {

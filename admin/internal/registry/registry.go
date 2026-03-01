@@ -71,6 +71,9 @@ func (r *Registry) List() ([]*session.Session, error) {
 		// Check if process is alive
 		sess.IsAlive = isProcessAlive(sess.PID)
 
+		// Load user stories progress from .ralph/prd.json
+		loadUserStoriesProgress(sess)
+
 		all = append(all, sess)
 	}
 
@@ -185,6 +188,7 @@ func (r *Registry) GetSession(sessionID string) (*session.Session, error) {
 	sess.SessionID = sessionID
 	sess.FilePath = filePath
 	sess.IsAlive = isProcessAlive(sess.PID)
+	loadUserStoriesProgress(sess)
 	return sess, nil
 }
 
@@ -303,6 +307,44 @@ func resolveRealPath(path string) string {
 		return path
 	}
 	return real
+}
+
+// prdFile represents the minimal structure of .ralph/prd.json
+// needed to extract user stories progress.
+type prdFile struct {
+	UserStories []struct {
+		Passes bool `json:"passes"`
+	} `json:"userStories"`
+}
+
+// loadUserStoriesProgress reads .ralph/prd.json from the session's work
+// directory and populates the user stories fields on the session.
+func loadUserStoriesProgress(sess *session.Session) {
+	workDir := sess.WorkDir
+	if workDir == "" {
+		return
+	}
+
+	prdPath := filepath.Join(workDir, ".ralph", "prd.json")
+	data, err := os.ReadFile(prdPath)
+	if err != nil {
+		return // file not found or unreadable — leave UserStoriesFound=false
+	}
+
+	var prd prdFile
+	if err := json.Unmarshal(data, &prd); err != nil {
+		return
+	}
+
+	sess.UserStoriesTotal = len(prd.UserStories)
+	done := 0
+	for _, us := range prd.UserStories {
+		if us.Passes {
+			done++
+		}
+	}
+	sess.UserStoriesDone = done
+	sess.UserStoriesFound = true
 }
 
 // ReadProgressFile reads the last N lines of the progress.txt file
