@@ -21,7 +21,7 @@ Claude Code, and Amp as the underlying AI tool.
 2. **`bin/ralphy-admin`** — a terminal UI for monitoring running sessions, viewing logs and progress in real time, 
 and managing sessions (pause, resume, kill). Vim-style navigation.
 
-<!-- TODO: add screenshots -->
+![Ralphy Admin Demo](misc/ralphy-admin-demo.gif)
 
 ## Quick Start
 
