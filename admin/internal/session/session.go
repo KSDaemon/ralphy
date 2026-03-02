@@ -66,8 +66,12 @@ func (s *Session) IsExpired() bool {
 	return time.Since(s.LastHeartbeat) > SessionTTL
 }
 
-// Uptime returns the duration since the session started.
+// Uptime returns the duration the session has been (or was) running.
+// For terminal sessions, returns the fixed duration from start to last heartbeat.
 func (s *Session) Uptime() time.Duration {
+	if s.IsTerminal() {
+		return s.LastHeartbeat.Sub(s.StartedAt)
+	}
 	return time.Since(s.StartedAt)
 }
 
@@ -111,7 +115,11 @@ func (s *Session) FormatUptime() string {
 }
 
 // FormatHeartbeat returns a human-readable time since last heartbeat.
+// For terminal sessions, returns "-" since heartbeat is no longer relevant.
 func (s *Session) FormatHeartbeat() string {
+	if s.IsTerminal() {
+		return "-"
+	}
 	d := s.TimeSinceHeartbeat()
 	if d < 5*time.Second {
 		return "just now"
