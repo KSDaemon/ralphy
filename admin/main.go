@@ -7,14 +7,27 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/ksdaemon/ralphy-admin/internal/config"
 	"github.com/ksdaemon/ralphy-admin/internal/registry"
+	"github.com/ksdaemon/ralphy-admin/internal/session"
 	"github.com/ksdaemon/ralphy-admin/internal/tui"
 )
 
 func main() {
+	// Load configuration from ~/.config/ralphy/settings.toml
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Apply config values to session thresholds
+	session.StaleThreshold = cfg.StaleThreshold
+	session.SessionTTL = cfg.SessionTTL
+
 	reg := registry.New()
 
-	// Clean up expired sessions (>24h) on startup
+	// Clean up expired sessions on startup
 	if removed, err := reg.CleanupExpired(); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: failed to clean expired sessions: %v\n", err)
 	} else if removed > 0 {

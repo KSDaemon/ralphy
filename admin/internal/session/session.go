@@ -45,7 +45,10 @@ const (
 	StatusPaused        = "paused"
 	StatusStale         = "stale" // computed: heartbeat too old but process alive
 	StatusDead          = "dead"  // computed: PID not found and was running
+)
 
+// Configurable thresholds (defaults, overridden by config).
+var (
 	StaleThreshold = 5 * time.Minute
 	SessionTTL     = 24 * time.Hour
 )

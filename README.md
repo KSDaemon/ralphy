@@ -52,6 +52,22 @@ make build    # produces bin/ralphy-admin
 
 Requires Go 1.25+. The binary is placed into `bin/` — make sure that directory is in your `PATH`.
 
+## Configuration
+
+`ralphy-admin` reads optional settings from `~/.config/ralphy/settings.toml`. If the file doesn't exist, built-in defaults are used.
+
+```toml
+# How long since the last heartbeat before a session is marked "stale".
+# Default: 5m
+stale_threshold = "5m"
+
+# How long to keep session files before automatic cleanup.
+# Default: 24h
+session_ttl = "24h"
+```
+
+Duration values support: `s` (seconds), `m` (minutes), `h` (hours), `d` (days), and combinations like `1d12h`, `2h30m`.
+
 ## Supported Tools
 
 Currently works with:
