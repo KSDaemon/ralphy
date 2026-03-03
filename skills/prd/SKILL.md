@@ -60,7 +60,13 @@ This lets users respond with "1A, 2C, 3B" for quick iteration.
 Generate the PRD with these sections:
 
 ### 1. Introduction/Overview
-Brief description of the feature and the problem it solves.
+Brief description of the feature and the problem it solves. Include the **work type** — one of:
+- **Feature** — new user-facing functionality
+- **Fix** — fixing broken behavior
+- **Hotfix** — urgent/critical production fix
+- **Chore** — refactoring, CI/CD, tests, dependencies, configs, documentation
+
+This determines the git branch prefix when converting to prd.json (`feat/`, `fix/`, `hotfix/`, `chore/`).
 
 ### 2. Goals
 Specific, measurable objectives (bullet list).
@@ -145,6 +151,8 @@ The PRD reader may be a junior developer or AI agent. Therefore:
 # PRD: Task Priority System
 
 ## Introduction
+
+**Type:** Feature
 
 Add priority levels to tasks so users can focus on what matters most. Tasks can be marked as high, medium, or low priority, with visual indicators and filtering to help users manage their workload effectively.
 
@@ -234,6 +242,7 @@ Before saving the PRD:
 
 - [ ] Asked clarifying questions with lettered options
 - [ ] Incorporated user's answers
+- [ ] Work type specified in Introduction (Feature / Fix / Hotfix / Chore)
 - [ ] User stories are small and specific
 - [ ] Functional requirements are numbered and unambiguous
 - [ ] Non-goals section defines clear boundaries

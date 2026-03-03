@@ -20,7 +20,7 @@ Take the latest created PRD from ".ralph/tasks/" directory (markdown file or tex
 ```json
 {
   "project": "[Project Name]",
-  "branchName": "ralphy/[feature-name-kebab-case]",
+  "branchName": "[prefix]/[name-kebab-case]",
   "description": "[Feature description from PRD title/intro]",
   "userStories": [
     {
@@ -115,13 +115,36 @@ Frontend stories are NOT complete until visually verified. Ralphy will use the d
 
 ---
 
+## Branch Naming Convention
+
+The `branchName` prefix depends on the **type of work** described in the PRD:
+
+| Type | Prefix | When to use |
+|------|--------|-------------|
+| New feature | `feat/` | New functionality, new UI, new API endpoints |
+| Bug fix | `fix/` | Fixing broken behavior, correcting errors |
+| Hot fix | `hotfix/` | Urgent production fix, critical bug |
+| Chore | `chore/` | Refactoring, CI/CD, tests, dependencies, configs, documentation |
+
+**Examples:**
+- New notification system → `feat/notification-system`
+- Fix broken login flow → `fix/login-redirect-loop`
+- Urgent security patch → `hotfix/sql-injection-user-search`
+- Update CI pipeline → `chore/github-actions-cache`
+- Add missing tests → `chore/api-endpoint-tests`
+- Refactor database layer → `chore/db-layer-refactor`
+
+**How to determine the type:** Read the PRD title, description, and goals. If it introduces new user-facing functionality — it's `feat/`. If it fixes something that's broken — `fix/` (or `hotfix/` if marked as urgent/critical). Everything else (refactoring, tooling, tests, CI, configs, docs) — `chore/`.
+
+---
+
 ## Conversion Rules
 
 1. **Each user story becomes one JSON entry**
 2. **IDs**: Sequential (US-001, US-002, etc.)
 3. **Priority**: Based on dependency order, then document order
 4. **All stories**: `passes: false` and empty `notes`
-5. **branchName**: Derive from feature name, kebab-case, prefixed with `ralphy/`
+5. **branchName**: Determine prefix from work type (see Branch Naming Convention above), then append the feature name in kebab-case
 6. **Always add**: "Typecheck passes" to every story's acceptance criteria
 
 ---
@@ -164,7 +187,7 @@ Add ability to mark tasks with different statuses.
 ```json
 {
   "project": "TaskApp",
-  "branchName": "ralphy/task-status",
+  "branchName": "feat/task-status",
   "description": "Task Status Feature - Track task progress with status indicators",
   "userStories": [
     {
