@@ -148,7 +148,7 @@ Commands:
 Examples:
   ralphy                      # Start or continue work (uses worktree by default)
   ralphy new                  # Start fresh with new PRD (worktree)
-                              # If repo is 'myapp' and PRD branch is 'ralphy/feature-x'
+                              # If repo is 'myapp' and PRD branch is 'feat/feature-x'
                               # Creates worktree at: ../myapp-feature-x/
   ralphy -b new               # Start fresh with new PRD in current repo (branch only)
   ralphy install              # Install skills to OpenCode and Claude config directories
@@ -163,9 +163,11 @@ Worktree Details (default behavior):
 
   Directory name format: <repository-name>-<feature-name>
   - Repository name: from git root directory name
-  - Feature name: PRD branch name with 'ralphy/' prefix stripped
+  - Feature name: PRD branch name with prefix stripped (everything before the first /)
 
-  Example: If you're in /home/user/myapp and PRD specifies branch 'ralphy/add-auth',
+  Branch prefixes: feat/, fix/, hotfix/, chore/ (set by the ralph skill based on work type)
+
+  Example: If you're in /home/user/myapp and PRD specifies branch 'feat/add-auth',
            worktree will be created at: /home/user/myapp-add-auth/
 EOF
   exit 0
@@ -471,8 +473,8 @@ if [ "$PRD_EXISTS" = false ]; then
   if [ "$USE_WORKTREE" = true ] && [ -n "$PRD_BRANCH" ]; then
 
     if [ "$PRD_BRANCH" != "$CURRENT_GIT_BRANCH" ] || [ -z "$CURRENT_GIT_BRANCH" ]; then
-      # Extract feature name without ralphy/ prefix for worktree directory naming
-      FEATURE_NAME=$(echo "$PRD_BRANCH" | sed 's|^ralphy/||')
+      # Extract feature name without branch prefix (feat/, fix/, hotfix/, chore/, ralphy/, etc.)
+      FEATURE_NAME=$(echo "$PRD_BRANCH" | sed 's|^[^/]*/||')
       WORKTREE_DIR="$ORIGINAL_DIR/../$REPO_NAME-$FEATURE_NAME"
 
       echo "Setting up worktree at: $WORKTREE_DIR"
