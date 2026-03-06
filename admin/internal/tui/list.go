@@ -35,8 +35,11 @@ type columnWidths struct {
 	uptime      int
 }
 
-// computeColumns calculates column widths based on available terminal width.
-func computeColumns(termWidth int) columnWidths {
+// computeColumns calculates column widths based on available terminal width
+// and actual session data. It examines the longest project/branch names and
+// distributes the available space proportionally so that columns are only
+// truncated when the terminal is genuinely too narrow.
+func computeColumns(termWidth int, sessions []*session.Session) columnWidths {
 	if termWidth <= 0 {
 		termWidth = 120 // reasonable default
 	}
@@ -55,14 +58,38 @@ func computeColumns(termWidth int) columnWidths {
 	overhead := tablePadding + 6 // 6 gaps between 7 remaining fixed cols
 	remaining := termWidth - fixedTotal - overhead
 
+	// Find the longest project and branch names across all sessions.
+	maxProject := len("PROJECT") // at least as wide as the header
+	maxBranch := len("BRANCH")
+	for _, s := range sessions {
+		if len(s.Project) > maxProject {
+			maxProject = len(s.Project)
+		}
+		if len(s.Branch) > maxBranch {
+			maxBranch = len(s.Branch)
+		}
+	}
+
 	if remaining < minColProject+minColBranch+2 {
 		// Terminal is very narrow — give minimums
 		cw.project = minColProject
 		cw.branch = minColBranch
+	} else if maxProject+maxBranch <= remaining {
+		// Everything fits — no truncation needed, give exact widths.
+		cw.project = maxProject
+		cw.branch = maxBranch
+		// Distribute any leftover space proportionally.
+		leftover := remaining - maxProject - maxBranch
+		if leftover > 0 {
+			projExtra := leftover * maxProject / (maxProject + maxBranch)
+			cw.project += projExtra
+			cw.branch += leftover - projExtra
+		}
 	} else {
-		// Split remaining between project (35%) and branch (65%)
-		cw.project = remaining * 35 / 100
+		// Not enough room for both — split proportionally to content needs.
+		cw.project = remaining * maxProject / (maxProject + maxBranch)
 		cw.branch = remaining - cw.project
+		// Enforce minimums, giving the remainder to the other column.
 		if cw.project < minColProject {
 			cw.project = minColProject
 			cw.branch = remaining - cw.project
@@ -124,7 +151,7 @@ func (m Model) updateList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m Model) viewList() string {
 	var b strings.Builder
 
-	cw := computeColumns(m.width)
+	cw := computeColumns(m.width, m.sessions)
 
 	// Title with summary
 	activeCount := 0
