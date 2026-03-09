@@ -214,7 +214,7 @@ done
 # Handle 'install' command - symlink skills to supported AI tools
 if [ "$COMMAND" = "install" ]; then
   # Skills source directory (relative to this script)
-  SKILLS_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../ralphy/skills" && pwd)"
+  SKILLS_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../skills" && pwd)"
 
   if [ ! -d "$SKILLS_SRC/prd" ] || [ ! -d "$SKILLS_SRC/ralph" ]; then
     echo "Error: Skills not found at $SKILLS_SRC"
@@ -311,7 +311,7 @@ mkdir -p "$RALPH_DIR"
 
 # Get script directory for prompt file
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROMPT_FILE="$SCRIPT_DIR/../ralphy/prompt.md"
+PROMPT_FILE="$SCRIPT_DIR/../prompt.md"
 
 PRD_FILE="$RALPH_DIR/prd.json"
 PROGRESS_FILE="$RALPH_DIR/progress.txt"
