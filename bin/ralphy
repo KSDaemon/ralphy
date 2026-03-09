@@ -5,6 +5,15 @@
 
 set -e
 
+# === Resolve real script directory (follow symlinks) ===
+_SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$_SOURCE" ]; do
+  _DIR="$(cd -P "$(dirname "$_SOURCE")" && pwd)"
+  _SOURCE="$(readlink "$_SOURCE")"
+  [[ $_SOURCE != /* ]] && _SOURCE="$_DIR/$_SOURCE"
+done
+REAL_SCRIPT_DIR="$(cd -P "$(dirname "$_SOURCE")" && pwd)"
+
 # === Session Registry ===
 # Ralphy sessions are registered in a file-based registry so that
 # ralphy-admin TUI can discover and monitor running sessions.
@@ -214,7 +223,7 @@ done
 # Handle 'install' command - symlink skills to supported AI tools
 if [ "$COMMAND" = "install" ]; then
   # Skills source directory (relative to this script)
-  SKILLS_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../skills" && pwd)"
+  SKILLS_SRC="$(cd "$REAL_SCRIPT_DIR/../skills" && pwd)"
 
   if [ ! -d "$SKILLS_SRC/prd" ] || [ ! -d "$SKILLS_SRC/ralph" ]; then
     echo "Error: Skills not found at $SKILLS_SRC"
@@ -310,8 +319,7 @@ RALPH_DIR="$WORK_DIR/.ralph"
 mkdir -p "$RALPH_DIR"
 
 # Get script directory for prompt file
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROMPT_FILE="$SCRIPT_DIR/../prompt.md"
+PROMPT_FILE="$REAL_SCRIPT_DIR/../prompt.md"
 
 PRD_FILE="$RALPH_DIR/prd.json"
 PROGRESS_FILE="$RALPH_DIR/progress.txt"
