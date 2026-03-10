@@ -263,7 +263,7 @@ Add ability to mark tasks with different statuses.
    - Copy current `prd.json` and `progress.txt` to archive
    - Reset `progress.txt` with fresh header
 
-**The ralphy script handles this automatically** when you run it, but if you are manually updating prd.json between runs, archive first.
+**The ralphy script will prompt the user interactively** when it detects a branch mismatch at startup (offering to switch branches, remove the old PRD, or quit). If you are manually updating prd.json between runs, archive first.
 
 ---
 

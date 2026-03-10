@@ -6,7 +6,7 @@ You are an autonomous coding agent working on a software project.
 
 1. Read the PRD at `.ralph/prd.json` (in the same directory as this file)
 2. Read the progress log at `.ralph/progress.txt` (check Codebase Patterns section first)
-3. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
+3. Verify you're on the correct branch from PRD `branchName`. The ralphy launcher should have already ensured the branch matches, but if for some reason the current branch differs, do NOT silently switch branches or delete the PRD. Instead, stop and report the mismatch to the user so they can decide what to do.
 4. Pick the **highest priority** user story where `passes: false`
 5. Implement that single user story
 6. Run quality checks (e.g., typecheck, lint, test - use whatever your project requires)

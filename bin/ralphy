@@ -400,17 +400,52 @@ if [ -f "$PRD_FILE" ]; then
   PRD_EXISTS=true
   PRD_BRANCH=$(jq -r '.branchName // empty' "$PRD_FILE" 2>/dev/null || echo "")
 
-  # If branch doesn't match, treat as if PRD doesn't exist
+  # If branch doesn't match, ask user what to do
   if [ -n "$PRD_BRANCH" ] && [ -n "$CURRENT_GIT_BRANCH" ] && [ "$PRD_BRANCH" != "$CURRENT_GIT_BRANCH" ]; then
     echo ""
     echo "WARNING: PRD file exists but branch doesn't match!"
-    echo "  PRD branch: $PRD_BRANCH"
+    echo "  PRD branch:     $PRD_BRANCH"
     echo "  Current branch: $CURRENT_GIT_BRANCH"
     echo ""
-    echo "Removing old PRD and starting fresh for current branch..."
-    rm -f "$PRD_FILE"
-    rm -f "$PROGRESS_FILE"
-    PRD_EXISTS=false
+    echo "What would you like to do?"
+    echo "  1) Switch to branch '$PRD_BRANCH' (create from main if it doesn't exist) and continue working on this PRD"
+    echo "  2) Remove this PRD and start fresh on current branch '$CURRENT_GIT_BRANCH'"
+    echo "  3) Quit (so you can sort it out manually)"
+    echo ""
+    while true; do
+      printf "Choose [1/2/3]: "
+      read -r BRANCH_CHOICE
+      case "$BRANCH_CHOICE" in
+        1)
+          echo ""
+          if git rev-parse --verify "$PRD_BRANCH" >/dev/null 2>&1; then
+            echo "Switching to existing branch '$PRD_BRANCH'..."
+            git checkout "$PRD_BRANCH"
+          else
+            echo "Branch '$PRD_BRANCH' doesn't exist. Creating from main..."
+            git checkout -b "$PRD_BRANCH" main 2>/dev/null || git checkout -b "$PRD_BRANCH"
+          fi
+          CURRENT_GIT_BRANCH="$PRD_BRANCH"
+          echo "Now on branch: $CURRENT_GIT_BRANCH"
+          break
+          ;;
+        2)
+          echo ""
+          echo "Removing old PRD and starting fresh for current branch..."
+          rm -f "$PRD_FILE"
+          rm -f "$PROGRESS_FILE"
+          PRD_EXISTS=false
+          break
+          ;;
+        3)
+          echo "Exiting. Sort out your branches and run ralphy again."
+          exit 0
+          ;;
+        *)
+          echo "Invalid choice. Please enter 1, 2, or 3."
+          ;;
+      esac
+    done
   fi
 fi
 
