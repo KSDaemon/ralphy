@@ -134,6 +134,7 @@ TOOL="opencode"
 MAX_ITERATIONS=100
 USE_WORKTREE=true
 COMMAND=""
+PRD_MD_FILE=""
 
 show_help() {
   cat << EOF
@@ -143,6 +144,7 @@ Usage: ralphy [OPTIONS] [COMMAND]
 
 Options:
   --tool TOOL             AI tool to use: opencode, amp, or claude (default: opencode)
+  --prd <path>            Use an existing PRD markdown file instead of interactive generation
   -b, --branch            Work in current repo (create/switch branch) instead of worktree
                           By default, ralphy creates a git worktree in a sibling directory
   --max-iterations N      Maximum number of iterations (default: 100)
@@ -163,8 +165,9 @@ Examples:
   ralphy install              # Install skills to OpenCode and Claude config directories
   ralphy cleanup              # Clean up and commit PRD files (finish/clean/clear also work)
   ralphy finish               # Same as cleanup - removes PRD and commits
-  ralphy --tool claude        # Use Claude instead of OpenCode
-  ralphy --max-iterations 50  # Run with 50 iterations max
+  ralphy --prd ./my-feature.md  # Start from an existing PRD markdown file
+  ralphy --tool claude          # Use Claude instead of OpenCode
+  ralphy --max-iterations 50    # Run with 50 iterations max
 
 Worktree Details (default behavior):
   Ralphy creates an isolated git worktree in a sibling directory by default.
@@ -207,6 +210,14 @@ while [[ $# -gt 0 ]]; do
       MAX_ITERATIONS="${1#*=}"
       shift
       ;;
+    --prd)
+      PRD_MD_FILE="$2"
+      shift 2
+      ;;
+    --prd=*)
+      PRD_MD_FILE="${1#*=}"
+      shift
+      ;;
     *)
       # Store as command if it's not a number
       if [[ ! "$1" =~ ^[0-9]+$ ]]; then
@@ -219,6 +230,20 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Validate --prd flag
+if [ -n "$PRD_MD_FILE" ]; then
+  # Resolve to absolute path
+  if [ -f "$PRD_MD_FILE" ]; then
+    PRD_MD_FILE="$(cd "$(dirname "$PRD_MD_FILE")" && pwd)/$(basename "$PRD_MD_FILE")"
+  else
+    echo "Error: PRD file not found: $PRD_MD_FILE"
+    exit 1
+  fi
+  if [[ "$PRD_MD_FILE" != *.md ]]; then
+    echo "Warning: PRD file '$(basename "$PRD_MD_FILE")' does not have .md extension. Proceeding anyway..."
+  fi
+fi
 
 # Handle 'install' command - symlink skills to supported AI tools
 if [ "$COMMAND" = "install" ]; then
@@ -449,36 +474,100 @@ if [ -f "$PRD_FILE" ]; then
   fi
 fi
 
+# Handle --prd flag conflict with existing prd.json
+if [ -n "$PRD_MD_FILE" ] && [ "$PRD_EXISTS" = true ]; then
+  echo ""
+  echo "WARNING: A prd.json already exists, but --prd flag was provided."
+  echo "  Existing PRD: $PRD_FILE"
+  echo "  Provided PRD: $PRD_MD_FILE"
+  echo ""
+  echo "What would you like to do?"
+  echo "  1) Overwrite - remove existing prd.json and generate a new one from the provided markdown"
+  echo "  2) Ignore --prd - continue working on the existing prd.json (ignore the provided file)"
+  echo "  3) Quit - exit so you can sort it out manually"
+  echo ""
+  while true; do
+    printf "Choose [1/2/3]: "
+    read -r PRD_CONFLICT_CHOICE
+    case "$PRD_CONFLICT_CHOICE" in
+      1)
+        echo ""
+        echo "Removing existing PRD and progress files..."
+        rm -f "$PRD_FILE"
+        rm -f "$PROGRESS_FILE"
+        PRD_EXISTS=false
+        break
+        ;;
+      2)
+        echo ""
+        echo "Continuing with existing prd.json. Ignoring --prd flag."
+        PRD_MD_FILE=""
+        break
+        ;;
+      3)
+        echo "Exiting."
+        exit 0
+        ;;
+      *)
+        echo "Invalid choice. Please enter 1, 2, or 3."
+        ;;
+    esac
+  done
+fi
+
 # Check if PRD exists, if not - guide user to create one
 if [ "$PRD_EXISTS" = false ]; then
-  echo ""
-  echo "No PRD file found at $PRD_FILE"
-  echo "You need to generate requirements first."
-  echo ""
-  echo "Starting $TOOL to help you create a task description..."
-  echo "Use the PRD skill to generate a detailed requirements document and answer the clarifying questions, smth like:"
-  echo "Load the prd skill and create a PRD for [your feature description]"
-  echo ""
-  sleep 2
 
-  # Start the tool in interactive mode
-  if [[ "$TOOL" == "amp" ]]; then
-    amp
-  elif [[ "$TOOL" == "claude" ]]; then
-    claude
-  else
-    if [[ -f "opencode.json" ]]; then
-      opencode --config opencode.json
+  if [ -n "$PRD_MD_FILE" ]; then
+    # --prd flag: use provided PRD markdown file, skip interactive session
+    echo ""
+    echo "Using provided PRD markdown: $PRD_MD_FILE"
+
+    # Check if the file is already inside .ralph/tasks/
+    TASKS_DIR="$RALPH_DIR/tasks"
+    mkdir -p "$TASKS_DIR"
+    REAL_PRD_MD="$(cd "$(dirname "$PRD_MD_FILE")" && pwd)/$(basename "$PRD_MD_FILE")"
+    REAL_TASKS_DIR="$(cd "$TASKS_DIR" && pwd)"
+
+    if [[ "$REAL_PRD_MD" == "$REAL_TASKS_DIR/"* ]]; then
+      echo "PRD file is already in .ralph/tasks/, no copy needed."
+      LATEST_PRD="$PRD_MD_FILE"
     else
-      opencode
+      echo "Copying PRD file to .ralph/tasks/..."
+      cp "$PRD_MD_FILE" "$TASKS_DIR/"
+      LATEST_PRD="$TASKS_DIR/$(basename "$PRD_MD_FILE")"
     fi
+  else
+    # No --prd flag: interactive PRD generation
+    echo ""
+    echo "No PRD file found at $PRD_FILE"
+    echo "You need to generate requirements first."
+    echo ""
+    echo "Starting $TOOL to help you create a task description..."
+    echo "Use the PRD skill to generate a detailed requirements document and answer the clarifying questions, smth like:"
+    echo "Load the prd skill and create a PRD for [your feature description]"
+    echo ""
+    sleep 2
+
+    # Start the tool in interactive mode
+    if [[ "$TOOL" == "amp" ]]; then
+      amp
+    elif [[ "$TOOL" == "claude" ]]; then
+      claude
+    else
+      if [[ -f "opencode.json" ]]; then
+        opencode --config opencode.json
+      else
+        opencode
+      fi
+    fi
+
+    # Find the latest PRD file in tasks/
+    LATEST_PRD=$(ls -t "$RALPH_DIR/tasks/prd-"*.md 2>/dev/null | head -1)
   fi
 
   echo ""
   echo "Now converting the created PRD to prd.json format..."
-
-  # Find the latest PRD file in tasks/
-  LATEST_PRD=$(ls -t "$RALPH_DIR/tasks/prd-"*.md 2>/dev/null | head -1)
 
   if [ -n "$LATEST_PRD" ] && [ -f "$LATEST_PRD" ]; then
     echo "Found PRD: $LATEST_PRD"
