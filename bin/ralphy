@@ -555,11 +555,7 @@ if [ "$PRD_EXISTS" = false ]; then
     elif [[ "$TOOL" == "claude" ]]; then
       claude
     else
-      if [[ -f "opencode.json" ]]; then
-        opencode --config opencode.json
-      else
-        opencode
-      fi
+      opencode
     fi
 
     # Find the latest PRD file in tasks/
@@ -578,11 +574,7 @@ if [ "$PRD_EXISTS" = false ]; then
     elif [[ "$TOOL" == "claude" ]]; then
       echo "$CONVERT_PROMPT" | claude --dangerously-skip-permissions --print
     else
-      if [[ -f "opencode.json" ]]; then
-        echo "$CONVERT_PROMPT" | opencode --config opencode.json run
-      else
-        echo "$CONVERT_PROMPT" | opencode run
-      fi
+      echo "$CONVERT_PROMPT" | opencode run
     fi
   else
     echo "No PRD file found in tasks/ directory. Please create one manually."
@@ -729,11 +721,7 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   elif [[ "$TOOL" == "claude" ]]; then
     OUTPUT=$(claude --dangerously-skip-permissions --print < "$PROMPT_FILE" 2>&1 | tee -a "$SESSION_LOG" /dev/stderr) || true
   else
-    if [[ ! -f "opencode.json" ]]; then
-      OUTPUT=$(cat "$PROMPT_FILE" | opencode run 2>&1 | tee -a "$SESSION_LOG" /dev/stderr) || true
-    else
-      OUTPUT=$(cat "$PROMPT_FILE" | opencode --config opencode.json run 2>&1 | tee -a "$SESSION_LOG" /dev/stderr) || true
-    fi
+    OUTPUT=$(cat "$PROMPT_FILE" | opencode run 2>&1 | tee -a "$SESSION_LOG" /dev/stderr) || true
   fi
 
   # Check for completion signal
