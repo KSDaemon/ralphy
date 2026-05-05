@@ -23,12 +23,30 @@ type Config struct {
 	// SessionTTL is how long to keep session files before auto-cleanup.
 	// Default: 24h.
 	SessionTTL time.Duration
+
+	// DefaultTool is the AI tool ralphy launches when --tool is not passed
+	// on the command line. One of "opencode", "amp", "claude". Default: "opencode".
+	// Overridden by the RALPHY_TOOL environment variable.
+	DefaultTool string
 }
 
 // tomlConfig mirrors the TOML file structure with string durations.
 type tomlConfig struct {
 	StaleThreshold string `toml:"stale_threshold"`
 	SessionTTL     string `toml:"session_ttl"`
+	DefaultTool    string `toml:"default_tool"`
+}
+
+// validTools is the set of AI tools ralphy supports.
+var validTools = map[string]struct{}{
+	"opencode": {},
+	"amp":      {},
+	"claude":   {},
+}
+
+func isValidTool(s string) bool {
+	_, ok := validTools[s]
+	return ok
 }
 
 // DefaultConfig returns a Config with built-in defaults.
@@ -36,41 +54,56 @@ func DefaultConfig() *Config {
 	return &Config{
 		StaleThreshold: 5 * time.Minute,
 		SessionTTL:     24 * time.Hour,
+		DefaultTool:    "opencode",
 	}
 }
 
 // Load reads configuration from ~/.config/ralphy/settings.toml.
 // Missing file or missing keys silently fall back to defaults.
-// Returns an error only if the file exists but is malformed.
+// The RALPHY_TOOL environment variable, when set, overrides default_tool
+// from the config file.
+// Returns an error only if the file exists but is malformed, or if a
+// configured AI tool name is not one of the supported tools.
 func Load() (*Config, error) {
 	cfg := DefaultConfig()
 
 	configPath := configFilePath()
 	data, err := os.ReadFile(configPath)
-	if err != nil {
-		// File doesn't exist — use defaults, no error
-		return cfg, nil
-	}
-
-	var tc tomlConfig
-	if err := toml.Unmarshal(data, &tc); err != nil {
-		return nil, fmt.Errorf("parsing %s: %w", configPath, err)
-	}
-
-	if tc.StaleThreshold != "" {
-		d, err := parseDuration(tc.StaleThreshold)
-		if err != nil {
-			return nil, fmt.Errorf("invalid stale_threshold %q in %s: %w", tc.StaleThreshold, configPath, err)
+	if err == nil {
+		var tc tomlConfig
+		if err := toml.Unmarshal(data, &tc); err != nil {
+			return nil, fmt.Errorf("parsing %s: %w", configPath, err)
 		}
-		cfg.StaleThreshold = d
+
+		if tc.StaleThreshold != "" {
+			d, err := parseDuration(tc.StaleThreshold)
+			if err != nil {
+				return nil, fmt.Errorf("invalid stale_threshold %q in %s: %w", tc.StaleThreshold, configPath, err)
+			}
+			cfg.StaleThreshold = d
+		}
+
+		if tc.SessionTTL != "" {
+			d, err := parseDuration(tc.SessionTTL)
+			if err != nil {
+				return nil, fmt.Errorf("invalid session_ttl %q in %s: %w", tc.SessionTTL, configPath, err)
+			}
+			cfg.SessionTTL = d
+		}
+
+		if tc.DefaultTool != "" {
+			if !isValidTool(tc.DefaultTool) {
+				return nil, fmt.Errorf("invalid default_tool %q in %s: must be one of opencode, amp, claude", tc.DefaultTool, configPath)
+			}
+			cfg.DefaultTool = tc.DefaultTool
+		}
 	}
 
-	if tc.SessionTTL != "" {
-		d, err := parseDuration(tc.SessionTTL)
-		if err != nil {
-			return nil, fmt.Errorf("invalid session_ttl %q in %s: %w", tc.SessionTTL, configPath, err)
+	if envTool := strings.TrimSpace(os.Getenv("RALPHY_TOOL")); envTool != "" {
+		if !isValidTool(envTool) {
+			return nil, fmt.Errorf("invalid RALPHY_TOOL %q: must be one of opencode, amp, claude", envTool)
 		}
-		cfg.SessionTTL = d
+		cfg.DefaultTool = envTool
 	}
 
 	return cfg, nil

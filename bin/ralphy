@@ -130,11 +130,31 @@ update_session_status() {
 trap 'echo ""; echo "Ralphy interrupted by user. Exiting..."; update_session_status "interrupted"; exit 130' INT TERM
 
 # Parse arguments
-TOOL="opencode"
+# TOOL is resolved after argument parsing in this priority order:
+#   --tool flag > RALPHY_TOOL env var > default_tool in ~/.config/ralphy/settings.toml > "opencode"
+TOOL=""
 MAX_ITERATIONS=100
 USE_WORKTREE=true
 COMMAND=""
 PRD_MD_FILE=""
+
+# Read default_tool from ~/.config/ralphy/settings.toml.
+# Handles a single scalar TOML key; supports double or single quotes and inline comments.
+read_config_default_tool() {
+  local cfg="$HOME/.config/ralphy/settings.toml"
+  [ -f "$cfg" ] || return 0
+  awk '
+    /^[[:space:]]*default_tool[[:space:]]*=/ {
+      idx = index($0, "=")
+      val = substr($0, idx + 1)
+      sub(/#.*/, "", val)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+      gsub(/^["\047]|["\047]$/, "", val)
+      if (val != "") print val
+      exit
+    }
+  ' "$cfg"
+}
 
 show_help() {
   cat << EOF
@@ -143,7 +163,9 @@ Ralph Wiggum - Long-running AI agent loop
 Usage: ralphy [OPTIONS] [COMMAND]
 
 Options:
-  --tool TOOL             AI tool to use: opencode, amp, or claude (default: opencode)
+  --tool TOOL             AI tool to use: opencode, amp, or claude
+                          Default: opencode. Override via RALPHY_TOOL env var or
+                          'default_tool' key in ~/.config/ralphy/settings.toml.
   --prd <path>            Use an existing PRD markdown file instead of interactive generation
   -b, --branch            Work in current repo (create/switch branch) instead of worktree
                           By default, ralphy creates a git worktree in a sibling directory
@@ -325,6 +347,16 @@ if [ "$COMMAND" = "install" ]; then
   fi
 
   exit 0
+fi
+
+# Resolve TOOL: --tool flag (already set above) > RALPHY_TOOL env > config default_tool > "opencode"
+if [ -z "$TOOL" ]; then
+  if [ -n "${RALPHY_TOOL:-}" ]; then
+    TOOL="$RALPHY_TOOL"
+  else
+    TOOL="$(read_config_default_tool)"
+    [ -z "$TOOL" ] && TOOL="opencode"
+  fi
 fi
 
 # Validate tool choice

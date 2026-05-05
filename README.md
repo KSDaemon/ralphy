@@ -54,9 +54,14 @@ Requires Go 1.25+. The binary is placed into `bin/` — make sure that directory
 
 ## Configuration
 
-`ralphy-admin` reads optional settings from `~/.config/ralphy/settings.toml`. If the file doesn't exist, built-in defaults are used.
+Both `ralphy` and `ralphy-admin` read optional settings from `~/.config/ralphy/settings.toml`. If the file doesn't exist, built-in defaults are used.
 
 ```toml
+# AI tool ralphy launches when --tool is not passed on the command line.
+# One of: "opencode", "amp", "claude". 
+# Default: "opencode"
+default_tool = "opencode"
+
 # How long since the last heartbeat before a session is marked "stale".
 # Default: 5m
 stale_threshold = "5m"
@@ -67,6 +72,17 @@ session_ttl = "24h"
 ```
 
 Duration values support: `s` (seconds), `m` (minutes), `h` (hours), `d` (days), and combinations like `1d12h`, `2h30m`.
+
+### Choosing the AI tool without `--tool`
+
+If you mostly use a single AI tool but occasionally switch, set it once instead of passing `--tool` every time. Resolution priority (highest first):
+
+1. `--tool` flag on the command line
+2. `RALPHY_TOOL` environment variable (e.g. `export RALPHY_TOOL=claude`)
+3. `default_tool` in `~/.config/ralphy/settings.toml`
+4. Built-in default: `opencode`
+
+The same `RALPHY_TOOL` env var is honored by `ralphy-admin` and overrides `default_tool` from the config file there as well.
 
 ## Supported Tools
 
