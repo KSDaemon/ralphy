@@ -58,9 +58,17 @@ Both `ralphy` and `ralphy-admin` read optional settings from `~/.config/ralphy/s
 
 ```toml
 # AI tool ralphy launches when --tool is not passed on the command line.
-# One of: "opencode", "amp", "claude". 
+# One of: "opencode", "amp", "claude".
 # Default: "opencode"
 default_tool = "opencode"
+
+# Optional: model name passed verbatim to the AI tool when --model is not set.
+# Format depends on the tool — you are responsible for using the right value:
+#   - claude:   alias ("sonnet", "opus", "haiku") or full ID ("claude-sonnet-4-6")
+#   - opencode: "provider/model" (e.g. "anthropic/claude-sonnet-4-6")
+#   - amp:      not supported (Amp picks the model via its interactive mode switcher)
+# Empty/unset = let the tool pick its own default.
+# default_model = "sonnet"
 
 # How long since the last heartbeat before a session is marked "stale".
 # Default: 5m
@@ -83,6 +91,23 @@ If you mostly use a single AI tool but occasionally switch, set it once instead 
 4. Built-in default: `opencode`
 
 The same `RALPHY_TOOL` env var is honored by `ralphy-admin` and overrides `default_tool` from the config file there as well.
+
+### Choosing the model without `--model`
+
+Same idea — set the model once and forget. Resolution priority (highest first):
+
+1. `-m` / `--model` flag on the command line (e.g. `ralphy --model sonnet`)
+2. `RALPHY_MODEL` environment variable (e.g. `export RALPHY_MODEL=sonnet`)
+3. `default_model` in `~/.config/ralphy/settings.toml`
+4. Empty — the underlying tool uses its own default
+
+The value is passed verbatim to the active tool's `--model` flag, so the format must match what that tool expects:
+
+| Tool | Expected format | Example |
+|---|---|---|
+| `claude` | alias or full model ID | `sonnet`, `opus`, `claude-sonnet-4-6` |
+| `opencode` | `provider/model` | `anthropic/claude-sonnet-4-6` |
+| `amp` | _not supported_ | model is selected via Amp's mode switcher (`Ctrl+S`); ralphy prints a warning and ignores the value |
 
 ## Supported Tools
 

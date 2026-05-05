@@ -28,6 +28,13 @@ type Config struct {
 	// on the command line. One of "opencode", "amp", "claude". Default: "opencode".
 	// Overridden by the RALPHY_TOOL environment variable.
 	DefaultTool string
+
+	// DefaultModel is the model name passed verbatim to the AI tool when
+	// --model is not provided. Format depends on the tool (claude accepts
+	// aliases like "sonnet"; opencode wants "provider/model"; amp ignores it).
+	// Empty = let the tool pick its own default.
+	// Overridden by the RALPHY_MODEL environment variable.
+	DefaultModel string
 }
 
 // tomlConfig mirrors the TOML file structure with string durations.
@@ -35,6 +42,7 @@ type tomlConfig struct {
 	StaleThreshold string `toml:"stale_threshold"`
 	SessionTTL     string `toml:"session_ttl"`
 	DefaultTool    string `toml:"default_tool"`
+	DefaultModel   string `toml:"default_model"`
 }
 
 // validTools is the set of AI tools ralphy supports.
@@ -55,13 +63,14 @@ func DefaultConfig() *Config {
 		StaleThreshold: 5 * time.Minute,
 		SessionTTL:     24 * time.Hour,
 		DefaultTool:    "opencode",
+		DefaultModel:   "",
 	}
 }
 
 // Load reads configuration from ~/.config/ralphy/settings.toml.
 // Missing file or missing keys silently fall back to defaults.
-// The RALPHY_TOOL environment variable, when set, overrides default_tool
-// from the config file.
+// The RALPHY_TOOL and RALPHY_MODEL environment variables, when set,
+// override default_tool and default_model from the config file respectively.
 // Returns an error only if the file exists but is malformed, or if a
 // configured AI tool name is not one of the supported tools.
 func Load() (*Config, error) {
@@ -97,6 +106,10 @@ func Load() (*Config, error) {
 			}
 			cfg.DefaultTool = tc.DefaultTool
 		}
+
+		if tc.DefaultModel != "" {
+			cfg.DefaultModel = tc.DefaultModel
+		}
 	}
 
 	if envTool := strings.TrimSpace(os.Getenv("RALPHY_TOOL")); envTool != "" {
@@ -104,6 +117,10 @@ func Load() (*Config, error) {
 			return nil, fmt.Errorf("invalid RALPHY_TOOL %q: must be one of opencode, amp, claude", envTool)
 		}
 		cfg.DefaultTool = envTool
+	}
+
+	if envModel := strings.TrimSpace(os.Getenv("RALPHY_MODEL")); envModel != "" {
+		cfg.DefaultModel = envModel
 	}
 
 	return cfg, nil

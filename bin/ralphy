@@ -132,19 +132,25 @@ trap 'echo ""; echo "Ralphy interrupted by user. Exiting..."; update_session_sta
 # Parse arguments
 # TOOL is resolved after argument parsing in this priority order:
 #   --tool flag > RALPHY_TOOL env var > default_tool in ~/.config/ralphy/settings.toml > "opencode"
+# MODEL is resolved similarly:
+#   --model flag > RALPHY_MODEL env var > default_model in ~/.config/ralphy/settings.toml > ""
+# Empty MODEL means "let the tool pick its own default".
 TOOL=""
+MODEL=""
 MAX_ITERATIONS=100
 USE_WORKTREE=true
 COMMAND=""
 PRD_MD_FILE=""
 
-# Read default_tool from ~/.config/ralphy/settings.toml.
+# Read a top-level scalar string value from ~/.config/ralphy/settings.toml.
 # Handles a single scalar TOML key; supports double or single quotes and inline comments.
-read_config_default_tool() {
+# Usage: read_config_string <key>
+read_config_string() {
+  local key="$1"
   local cfg="$HOME/.config/ralphy/settings.toml"
   [ -f "$cfg" ] || return 0
-  awk '
-    /^[[:space:]]*default_tool[[:space:]]*=/ {
+  awk -v key="$key" '
+    $0 ~ "^[[:space:]]*" key "[[:space:]]*=" {
       idx = index($0, "=")
       val = substr($0, idx + 1)
       sub(/#.*/, "", val)
@@ -166,6 +172,15 @@ Options:
   --tool TOOL             AI tool to use: opencode, amp, or claude
                           Default: opencode. Override via RALPHY_TOOL env var or
                           'default_tool' key in ~/.config/ralphy/settings.toml.
+  -m, --model MODEL       Model name passed verbatim to the AI tool. Format depends
+                          on the tool — you are responsible for using the right value:
+                            claude:   alias ('sonnet'/'opus'/'haiku') or full ID
+                                      (e.g. 'claude-sonnet-4-6')
+                            opencode: 'provider/model'
+                                      (e.g. 'anthropic/claude-sonnet-4-6')
+                            amp:      not supported (mode-based, switch with Ctrl+S)
+                          Override via RALPHY_MODEL env var or 'default_model' key
+                          in ~/.config/ralphy/settings.toml. Empty = tool default.
   --prd <path>            Use an existing PRD markdown file instead of interactive generation
   -b, --branch            Work in current repo (create/switch branch) instead of worktree
                           By default, ralphy creates a git worktree in a sibling directory
@@ -218,6 +233,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --tool=*)
       TOOL="${1#*=}"
+      shift
+      ;;
+    -m|--model)
+      MODEL="$2"
+      shift 2
+      ;;
+    --model=*)
+      MODEL="${1#*=}"
       shift
       ;;
     -b|--branch)
@@ -354,8 +377,17 @@ if [ -z "$TOOL" ]; then
   if [ -n "${RALPHY_TOOL:-}" ]; then
     TOOL="$RALPHY_TOOL"
   else
-    TOOL="$(read_config_default_tool)"
+    TOOL="$(read_config_string default_tool)"
     [ -z "$TOOL" ] && TOOL="opencode"
+  fi
+fi
+
+# Resolve MODEL: --model flag (already set above) > RALPHY_MODEL env > config default_model > ""
+if [ -z "$MODEL" ]; then
+  if [ -n "${RALPHY_MODEL:-}" ]; then
+    MODEL="$RALPHY_MODEL"
+  else
+    MODEL="$(read_config_string default_model)"
   fi
 fi
 
@@ -363,6 +395,20 @@ fi
 if [[ "$TOOL" != "amp" && "$TOOL" != "claude" && "$TOOL" != "opencode" ]]; then
   echo "Error: Invalid tool '$TOOL'. Must be 'amp', 'claude', or 'opencode'."
   exit 1
+fi
+
+# Build per-tool model arguments. amp does not support model selection via CLI,
+# so warn once and pass nothing for it. claude and opencode both use --model <value>.
+MODEL_ARGS=()
+if [ -n "$MODEL" ]; then
+  case "$TOOL" in
+    claude|opencode)
+      MODEL_ARGS=(--model "$MODEL")
+      ;;
+    amp)
+      echo "Warning: model '$MODEL' ignored — amp does not expose model selection via CLI." >&2
+      ;;
+  esac
 fi
 
 # Check tool is installed
@@ -583,11 +629,11 @@ if [ "$PRD_EXISTS" = false ]; then
 
     # Start the tool in interactive mode
     if [[ "$TOOL" == "amp" ]]; then
-      amp
+      amp "${MODEL_ARGS[@]}"
     elif [[ "$TOOL" == "claude" ]]; then
-      claude
+      claude "${MODEL_ARGS[@]}"
     else
-      opencode
+      opencode "${MODEL_ARGS[@]}"
     fi
 
     # Find the latest PRD file in tasks/
@@ -602,11 +648,11 @@ if [ "$PRD_EXISTS" = false ]; then
     # Convert to prd.json
     CONVERT_PROMPT="Load the ralph skill and convert $LATEST_PRD to prd.json"
     if [[ "$TOOL" == "amp" ]]; then
-      echo "$CONVERT_PROMPT" | amp --dangerously-allow-all
+      echo "$CONVERT_PROMPT" | amp --dangerously-allow-all "${MODEL_ARGS[@]}"
     elif [[ "$TOOL" == "claude" ]]; then
-      echo "$CONVERT_PROMPT" | claude --dangerously-skip-permissions --print
+      echo "$CONVERT_PROMPT" | claude --dangerously-skip-permissions --print "${MODEL_ARGS[@]}"
     else
-      echo "$CONVERT_PROMPT" | opencode run
+      echo "$CONVERT_PROMPT" | opencode run "${MODEL_ARGS[@]}"
     fi
   else
     echo "No PRD file found in tasks/ directory. Please create one manually."
@@ -734,7 +780,7 @@ SESSION_PRD_DESC=$(jq -r '.description // ""' "$PRD_FILE" 2>/dev/null || echo ""
 
 register_session "$SESSION_PROJECT" "$SESSION_BRANCH" "$SESSION_PRD_DESC" "$WORK_DIR" "$WORKTREE_DIR"
 
-echo "Starting Ralphy - Tool: $TOOL - Max iterations: $MAX_ITERATIONS"
+echo "Starting Ralphy - Tool: $TOOL - Model: ${MODEL:-<tool default>} - Max iterations: $MAX_ITERATIONS"
 
 for i in $(seq 1 $MAX_ITERATIONS); do
   echo ""
@@ -749,11 +795,11 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   # Run the selected tool with the ralphy prompt
   # Output goes to: stderr (terminal), session log file, and captured in $OUTPUT
   if [[ "$TOOL" == "amp" ]]; then
-    OUTPUT=$(cat "$PROMPT_FILE" | amp --dangerously-allow-all 2>&1 | tee -a "$SESSION_LOG" /dev/stderr) || true
+    OUTPUT=$(cat "$PROMPT_FILE" | amp --dangerously-allow-all "${MODEL_ARGS[@]}" 2>&1 | tee -a "$SESSION_LOG" /dev/stderr) || true
   elif [[ "$TOOL" == "claude" ]]; then
-    OUTPUT=$(claude --dangerously-skip-permissions --print < "$PROMPT_FILE" 2>&1 | tee -a "$SESSION_LOG" /dev/stderr) || true
+    OUTPUT=$(claude --dangerously-skip-permissions --print "${MODEL_ARGS[@]}" < "$PROMPT_FILE" 2>&1 | tee -a "$SESSION_LOG" /dev/stderr) || true
   else
-    OUTPUT=$(cat "$PROMPT_FILE" | opencode run 2>&1 | tee -a "$SESSION_LOG" /dev/stderr) || true
+    OUTPUT=$(cat "$PROMPT_FILE" | opencode run "${MODEL_ARGS[@]}" 2>&1 | tee -a "$SESSION_LOG" /dev/stderr) || true
   fi
 
   # Check for completion signal
